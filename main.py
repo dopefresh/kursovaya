@@ -22,6 +22,7 @@ fpsClock = pygame.time.Clock()
 width, height = all_settings["width"], all_settings["height"]
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Drag Racing")
+pygame.display.set_icon(pygame.image.load("icon.png"))
 
 # Game images
 game_over_image = pygame.image.load('game_over.png')
@@ -87,8 +88,8 @@ class Player(Car):
             self.rect.x = width - self.rect.width - width // 3 - width // 9
         # if self.rect.x > width:
         #     self.rect.x = width
-        if self.rect.y < 0:
-            self.rect.y = 0
+        if self.rect.y < self.rect.height // 5:
+            self.rect.y = self.rect.height // 5
         if self.rect.y > height - self.rect.height:
             self.rect.y = height - self.rect.height
 
@@ -101,7 +102,7 @@ class Player(Car):
         self.speed_y = 0
 
 
-class Enemy(Car):
+class MovingDownObject(Car):
     def __init__(self, image_path, x, y):
         super().__init__(image_path)
         self.image = pygame.transform.rotate(self.image, 180)
@@ -115,6 +116,18 @@ class Enemy(Car):
             self.kill()
 
 
+class Enemy(MovingDownObject):
+    pass
+
+
+class TimeBooster(MovingDownObject):
+    pass
+
+
+class SpeedBooster(MovingDownObject):
+    pass
+
+
 class GameState:
     def __init__(self):
         self.state = 'menu'
@@ -122,13 +135,23 @@ class GameState:
     def main_game(self):
         global screen, width, height
         prev_time = time.time()
-
+        normal_prev_time = time.time()
+        prev_booster_time = time.time()
+        boost_time = None
+        boosted = False
         # Sprites
 
         # Player
         player = Player(CARS[random.randint(0, 7)])
         players = pygame.sprite.Group()
         players.add(player)
+        
+        # Boosters
+        time_boosters = pygame.sprite.Group()
+        speed_boosters = pygame.sprite.Group() 
+
+        spoiler = pygame.image.load("spoiler.png")
+        spoiler = pygame.transform.scale(spoiler, (player.rect.width, player.rect.height // 10))
         
         # Enemy
         enemies = pygame.sprite.Group()
@@ -141,8 +164,11 @@ class GameState:
         current_car_speed = pygame.font.Font("FiraCodeBold.ttf", 25)
         score_surf = score.render(str(score_number), True, (255, 255, 255))
         current_car_speed_surf = current_car_speed.render(f"{speed_number} km/h", True, (255, 255, 255))
+        player.image.blit(spoiler, (0, player.rect.height * 9 // 10))
+        
         y = 0 
         background_speed = 20
+        slow_down = False
         while True:
             rel_y = y % (height * 2)
             
@@ -173,19 +199,26 @@ class GameState:
                         player.ride(0, 20)
                 if event.type == KEYUP:
                     player.stop()
+            
+            time_lapse = 0.5
+            if boosted:
+                time_lapse = 6
+            
+            if current_time - normal_prev_time >= 0.5:
+                score_number += 1
+                normal_prev_time = current_time
+            score_surf = score.render(
+                             str(score_number), 
+                             True, 
+                             (255, 255, 255)
+                         )
 
-            if current_time - prev_time >= 0.5:
+            if current_time - prev_time >= time_lapse:
                 prev_time = current_time
                 image_path = CARS[random.randint(0, 7)]
                 enemy = Enemy(image_path, random.randint(
                               width // 10, width - width // 3 - width // 9 - 30), -100)
                 enemies.add(enemy)
-                score_number += 1
-                score_surf = score.render(
-                                 str(score_number), 
-                                 True, 
-                                 (255, 255, 255)
-                             )
                 speed_number += 0.1
                 speed_number = round(speed_number, 2)
                 background_speed += 0.1
@@ -195,25 +228,44 @@ class GameState:
                                             True,
                                             (255, 255, 255)
                                          )
-
+            if current_time - (random.randint(20, 30) * time_lapse) >= prev_booster_time:
+                slow_down_booster = TimeBooster('clock.png', random.randint(width // 10, width - width // 3 - width // 9 - 30), -100)
+                time_boosters.add(slow_down_booster)
+                prev_booster_time = time.time()
 
             players.draw(screen)
             players.update()
-
+        
             enemies.draw(screen)
-            if (current_time - begin_time) % 10 == 0:
+
+            time_boosters.draw(screen)
+            time_boosters.update(enemy_speed)
+
+            if (current_time - begin_time) % (time_lapse * 20) == 0:
                 if enemy_cars < 7:
                     enemy_cars += 1
 
             enemies.update(enemy_speed)
-            collision = pygame.sprite.groupcollide(
+            collision_die = pygame.sprite.groupcollide(
                 enemies, players, False, True)
-            if collision:
+            collision_boost = pygame.sprite.groupcollide(
+                time_boosters, players, True, False
+            )
+            if collision_die:
                 SCORES.append(score_number)
                 self.state = 'game_over'
 
             pygame.display.flip()
-            fpsClock.tick(fps)
+            
+            if collision_boost:
+                fpsClock.tick(5)
+                boost_time = time.time() 
+                boosted = True
+            elif not boost_time is None and current_time - boost_time < 10:
+                fpsClock.tick(5)
+            else:
+                fpsClock.tick(fps)
+                boosted = False
 
             if self.state == 'game_over':
                 self.game_over()
