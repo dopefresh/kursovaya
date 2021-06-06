@@ -4,22 +4,26 @@ from pygame.locals import *
 import sys
 import time
 import random
+import json
 
 
+CARS = ['car1.png', 'car2.png', 'car3.png', 'car4.png', 'car5.png', 'car6.png', 'car7.png', 'car8.png']
+
+settings = open("settings.txt", "r", encoding="utf-8")
+all_settings = json.loads(settings.read())
+settings.close()
 # Globals and initialization
 SCORES = []
 pygame.init()
 begin_time = time.time()
-fps = 60
+fps = all_settings['fps']
 fpsClock = pygame.time.Clock()
 
-width, height = 1280, 650
+width, height = all_settings["width"], all_settings["height"]
 screen = pygame.display.set_mode((width, height))
 pygame.display.set_caption("Drag Racing")
 
 # Game images
-background_image = pygame.image.load('road.png')
-background_image = pygame.transform.scale(background_image, (width, height))
 game_over_image = pygame.image.load('game_over.png')
 game_over_image = pygame.transform.scale(game_over_image, (width, height))
 
@@ -38,6 +42,12 @@ def quit_game():
     exit()
 
 
+background_image = pygame.image.load('road2.png')
+background_image = pygame.transform.scale(background_image, (width - width // 3, height * 2))
+mountains = pygame.image.load('mountains.png')
+mountains = pygame.transform.rotate(mountains, 270)
+mountains = pygame.transform.scale(mountains, (width // 3, height * 2))
+
 class Widget(pygame.Rect):
     def __init__(self, left, top, width, height, text, screen):
         super().__init__((left, top), (width, height))
@@ -51,6 +61,7 @@ class Car(pygame.sprite.Sprite):
     def __init__(self, image_path):
         super().__init__()
         self.image = pygame.image.load(image_path)
+        self.image = pygame.transform.scale(self.image, (width // 20, height // 8))
         self.rect = self.image.get_rect()
         self.speed_y = 0
 
@@ -61,6 +72,7 @@ class Car(pygame.sprite.Sprite):
 class Player(Car):
     def __init__(self, image_path):
         super().__init__(image_path)
+        # self.image = pygame.transform.rotate(self.image, 180)
         self.rect.x = width // 2
         self.rect.y = height - self.rect.height
         self.speed_x = 0
@@ -69,10 +81,12 @@ class Player(Car):
         self.rect.x += self.speed_x
         self.rect.y += self.speed_y
 
-        if self.rect.x < width // 6:
-            self.rect.x = width // 6
-        if self.rect.x > width - width // 6 - self.rect.width:
-            self.rect.x = width - self.rect.width - width // 6
+        if self.rect.x < width // 10:
+            self.rect.x = width // 10 
+        if self.rect.x > width - width // 3 - self.rect.width - width // 9:
+            self.rect.x = width - self.rect.width - width // 3 - width // 9
+        # if self.rect.x > width:
+        #     self.rect.x = width
         if self.rect.y < 0:
             self.rect.y = 0
         if self.rect.y > height - self.rect.height:
@@ -90,6 +104,7 @@ class Player(Car):
 class Enemy(Car):
     def __init__(self, image_path, x, y):
         super().__init__(image_path)
+        self.image = pygame.transform.rotate(self.image, 180)
         self.rect.x = x
         self.rect.y = y
 
@@ -109,22 +124,37 @@ class GameState:
         prev_time = time.time()
 
         # Sprites
-        player = Player('ltblue_car.png')
+
+        # Player
+        player = Player(CARS[random.randint(0, 7)])
         players = pygame.sprite.Group()
         players.add(player)
+        
+        # Enemy
         enemies = pygame.sprite.Group()
-        enemy_speed = 20
-
+        enemy_speed = 30 
         # Score
 
         score_number = 0
+        speed_number = 120
         score = pygame.font.Font('FiraCodeBold.ttf', 25)
+        current_car_speed = pygame.font.Font("FiraCodeBold.ttf", 25)
         score_surf = score.render(str(score_number), True, (255, 255, 255))
-
+        current_car_speed_surf = current_car_speed.render(f"{speed_number} km/h", True, (255, 255, 255))
+        y = 0 
+        background_speed = 20
         while True:
+            rel_y = y % (height * 2)
+            
             screen.fill((0, 0, 0))
-            screen.blit(background_image, (0, 0))
+            screen.blit(background_image, (0, rel_y))
+            screen.blit(mountains, (width - width // 3, rel_y))
+            if rel_y >= 0:
+                screen.blit(background_image, (0, rel_y - height * 2))
+                screen.blit(mountains, (width - width // 3, rel_y - height * 2))
             screen.blit(score_surf, (0, 0))
+            screen.blit(current_car_speed_surf, (width - width // 3 - width // 6, 0))
+            y += background_speed
 
             current_time = time.time()
             for event in pygame.event.get():
@@ -146,19 +176,32 @@ class GameState:
 
             if current_time - prev_time >= 0.5:
                 prev_time = current_time
-                enemy = Enemy('blue_car.png', random.randint(
-                    width // 6, width - width // 6), -100)
+                image_path = CARS[random.randint(0, 7)]
+                enemy = Enemy(image_path, random.randint(
+                              width // 10, width - width // 3 - width // 9 - 30), -100)
                 enemies.add(enemy)
                 score_number += 1
                 score_surf = score.render(
-                    str(score_number), True, (255, 255, 255))
+                                 str(score_number), 
+                                 True, 
+                                 (255, 255, 255)
+                             )
+                speed_number += 0.1
+                speed_number = round(speed_number, 2)
+                background_speed += 0.1
+                enemy_speed += 0.1
+                current_car_speed_surf = current_car_speed.render(
+                                            f"{speed_number} km/h",
+                                            True,
+                                            (255, 255, 255)
+                                         )
+
 
             players.draw(screen)
             players.update()
 
             enemies.draw(screen)
             if (current_time - begin_time) % 10 == 0:
-                enemy_speed += 1
                 if enemy_cars < 7:
                     enemy_cars += 1
 

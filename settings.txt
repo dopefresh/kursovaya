@@ -1,0 +1,7 @@
+{
+    "width": 1280,
+    "height": 650,
+    "fps": 60,
+    "player_img": "ltblue_car.png",
+    "enemy_img": "blue_car.png"
+}
