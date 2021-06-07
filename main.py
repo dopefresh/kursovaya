@@ -228,7 +228,7 @@ class GameState:
             score_surf = score.render(
                              str(score_number), 
                              True, 
-                             (255, 255, 255)
+                             all_settings['white']
                          )
 
             if current_time - prev_time >= time_lapse:
