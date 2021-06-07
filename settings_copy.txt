@@ -1,0 +1,9 @@
+{
+    "width": 1280,
+    "height": 650,
+    "fps": 60,
+    "player_car": "car1.png",
+    "player_speed": 15,
+    "car_prices": [100, 200, 300, 400, 500, 600, 700],
+    "player_money": 0
+}

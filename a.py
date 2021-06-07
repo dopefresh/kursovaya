@@ -1,26 +1,11 @@
-# import json
-# settings = open("settings.txt", "r", encoding="utf-8")
-# all_settings = json.loads(settings.read())
-# settings.close()
-# print(all_settings)
-import random
+import json
+settings = open("settings.txt", "r", encoding="utf-8")
+all_settings = json.loads(settings.read())
+settings.close()
 
-
-class SomeClass:
-    def __init__(self, **kwargs):
-        self.a = kwargs['a']
-
-
-class AnotherClass:
-    def __init__(self, **kwargs):
-        self.b = kwargs['b']
-
-
-
-kwargs = {'a': 5, 'b': 3}
-random_class = random.choice([SomeClass, AnotherClass])
-random_example = random_class(**kwargs)
-print(random_example.__dict__)
+settings_write = open("settings.txt", "w", encoding="utf-8")
+print(json.dumps(all_settings))
+settings_write.write(json.dumps(all_settings))
 
 
 

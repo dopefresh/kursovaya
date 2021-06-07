@@ -41,7 +41,40 @@ def quit_game():
     output = open("data.txt", "w", encoding="utf-8")
     for score in SCORES:
         output.write(f"{score}\n")
+
+    settings_write = open("settings.txt", "w", encoding="utf-8")
+    settings_write.write(json.dumps(all_settings, indent=4))
+    settings_write.close()
     exit()
+
+
+def buy_car(number):
+    global screen
+    if all_settings['player_money'] < (number + 1) * 100:
+        notification = pygame.font.Font('FiraCodeBold.ttf', 18)
+        notification_surface = notification.render(f'Not enough money', True, (255, 255, 255))
+        screen.blit(notification_surface, (0, 0))
+        return
+    if number in all_settings['cars_bought']:
+        return
+    all_settings['player_money'] -= number * 100
+    all_settings['player_car'] = f'car{number}.png' 
+    all_settings['player_speed'] = 15 + 2 * (number - 1)
+    all_settings['cars_bought'].append(number)
+    bought_notification = pygame.font.Font('FiraCodeBold.ttf', 18)
+    bought_notification_surface = bought_notification.render(f'Bought car {number}', True, (255, 255, 255))
+    screen.blit(bought_notification_surface, (0, 0))
+
+
+def use_car(number):
+    global screen
+    if not number in all_settings['cars_bought']: 
+        not_bought_notification = pygame.font.Font('FiraCodeBold.ttf', 18)
+        not_bought_notification_surface = not_bought_notification.render(f'You did not buy car {number}', True, (255, 255, 255))
+        screen.blit(not_bought_notification_surface, (0, 0))
+        return
+    all_settings['player_car'] = f'car{number}.png' 
+    all_settings['player_speed'] = 15 + 2 * (number - 1)
 
 
 background_image = pygame.image.load('media/road2.png')
@@ -49,6 +82,7 @@ background_image = pygame.transform.scale(background_image, (width - width // 3,
 mountains = pygame.image.load('media/mountains.png')
 mountains = pygame.transform.rotate(mountains, 270)
 mountains = pygame.transform.scale(mountains, (width // 3, height * 2))
+
 
 class Widget(pygame.Rect):
     def __init__(self, left, top, width, height, text, screen):
@@ -159,8 +193,8 @@ class GameState:
         # Sprites
 
         # Player
-        player_speed = 20
-        player = Player(CARS[random.randint(0, 7)])
+        player_speed = all_settings['player_speed']
+        player = Player(all_settings['player_car'])
         players = pygame.sprite.Group()
         players.add(player)
         
@@ -228,7 +262,7 @@ class GameState:
             score_surf = score.render(
                              str(score_number), 
                              True, 
-                             all_settings['white']
+                             (255, 255, 255)
                          )
 
             if current_time - prev_time >= time_lapse:
@@ -283,6 +317,7 @@ class GameState:
 
             if collision_die:
                 SCORES.append(score_number)
+                all_settings['player_money'] += score_number
                 self.state = 'game_over'
 
             pygame.display.flip()
@@ -299,15 +334,14 @@ class GameState:
 
             if collision_speed_boost:
                 speed_boost_time = time.time()
-                player_speed = 40
+                player_speed = all_settings['player_speed'] * 2
             
             elif speed_boost_time is None or current_time - speed_boost_time > 10:
-                player_speed = 20
+                player_speed = all_settings['player_speed']
 
             if self.state == 'game_over':
+
                 self.game_over()
-            elif self.state == 'menu':
-                self.menu()
 
     def game_over(self):
         global screen, game_over_background
@@ -324,11 +358,9 @@ class GameState:
             pygame.display.flip()
             fpsClock.tick(fps)
 
-            if self.state == 'main_game':
-                self.main_game()
-            elif self.state == 'menu':
+            if self.state == 'menu':
                 self.menu()
-
+    
     def menu(self):
 
         global screen, music_stopped
@@ -339,11 +371,16 @@ class GameState:
                              15, height // 15, 'quit', screen)
         music_off_button = Widget(width // 10, height // 2,
                                   width // 15, height // 15, 'toggle music', screen)
+        garage_button = Widget(width // 10, height // 1.7,
+                        width // 15, height // 15, 
+                        'garage', screen)
+
         screen.fill((0, 0, 0))
         screen.blit(play_button.font_surface, (play_button.x, play_button.y))
         screen.blit(quit_button.font_surface, (quit_button.x, quit_button.y))
         screen.blit(music_off_button.font_surface,
                     (music_off_button.x, music_off_button.y))
+        screen.blit(garage_button.font_surface, (garage_button.x, garage_button.y)) 
 
         while True:
             mouse_x, mouse_y = None, None
@@ -365,15 +402,139 @@ class GameState:
                     else:
                         music_stopped = False
                         pygame.mixer.music.play(-1)
+                if garage_button.collidepoint(mouse_x, mouse_y):
+                    self.state = 'garage'
 
             pygame.display.flip()
             fpsClock.tick(fps)
 
             if self.state == 'main_game':
                 self.main_game()
-            elif self.state == 'game_over':
-                self.game_over()
+            
+            elif self.state == 'garage':
+                self.garage()
 
+    def garage(self):
+        global screen, music_stopped
+        # Widgets
+        buttons = [
+            Widget(width // 15, height // 3, 
+                   width // 15, height // 15, 
+                   'buy', screen),
+            Widget(width // 6, height // 3, 
+                   width // 15, height // 15, 
+                   'buy', screen),
+            Widget(width * 0.25, height // 3,
+                   width // 15, height // 15, 
+                   'buy', screen),
+            Widget(width * 0.33, height // 3,
+                   width // 15, height // 15, 
+                   'buy', screen),
+            Widget(width * 0.40, height // 3,
+                   width // 15, height // 15, 
+                   'buy', screen),
+            Widget(width * 0.48 , height // 3,
+                   width // 15, height // 15, 
+                   'buy', screen),
+            Widget(width * 0.56, height // 3,
+                   width // 15, height // 15, 
+                   'buy', screen),
+            Widget(width // 15, height * 0.66, 
+                   width // 15, height // 15, 
+                   'menu', screen)
+        ]
+        use_buttons = [
+            Widget(width // 15, height // 5, 
+                   width // 15, height // 15, 
+                   'use', screen),
+            Widget(width // 6, height // 5, 
+                   width // 15, height // 15, 
+                   'use', screen),
+            Widget(width * 0.25, height // 5,
+                   width // 15, height // 15, 
+                   'use', screen),
+            Widget(width * 0.33, height // 5,
+                   width // 15, height // 15, 
+                   'use', screen),
+            Widget(width * 0.40, height // 5,
+                   width // 15, height // 15, 
+                   'use', screen),
+            Widget(width * 0.48 , height // 5,
+                   width // 15, height // 15, 
+                   'use', screen),
+            Widget(width * 0.56, height // 5,
+                   width // 15, height // 15, 
+                   'use', screen)
+        ]
+
+        car6 = pygame.image.load(os.path.join('media', 'car6.png'))
+        car6_image = pygame.transform.scale(car6, (width // 20, height // 8))
+        car_images = [
+            pygame.image.load(os.path.join('media', 'car2.png')), pygame.image.load(os.path.join('media', 'car3.png')),
+            pygame.image.load(os.path.join('media', 'car4.png')), pygame.image.load(os.path.join('media', 'car5.png')),
+            car6_image, pygame.image.load(os.path.join('media', 'car7.png')),
+            pygame.image.load(os.path.join('media', 'car8.png'))
+        ]
+                 
+        screen.fill((0, 0, 0))
+        
+        money_amount_font = pygame.font.Font('FiraCodeBold.ttf', 18)
+        money_amount_surf = money_amount_font.render(str(all_settings['player_money']), True, (255, 255, 255))
+        
+        money_icon = pygame.image.load(os.path.join('media', 'dollar.png'))
+        money_icon = pygame.transform.scale(money_icon, (width // 50, height // 40))
+        screen.blit(money_icon, (width * 0.75, height * 0.75))
+        screen.blit(money_amount_surf, (width * 0.72, height * 0.75))
+
+        for button in buttons:
+            screen.blit(button.font_surface, (button.x, button.y))
+        
+        for use_button in use_buttons:
+            screen.blit(use_button.font_surface, (use_button.x, use_button.y))
+
+        for i in range(len(car_images)):
+            car_image = car_images[i]
+            screen.blit(car_image, (buttons[i].x, buttons[i].y + height // 7))
+
+        while True:
+            mouse_x, mouse_y = None, None
+            for event in pygame.event.get():
+                if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                    mouse_x, mouse_y = event.pos
+                if event.type == pygame.QUIT:
+                    quit_game()
+
+            if mouse_x is not None:
+                # if play_button.collidepoint(mouse_x, mouse_y):
+                #     self.state = 'main_game'
+                for i in range(len(buttons)):
+                    button = buttons[i]
+                    if button.collidepoint(mouse_x, mouse_y):
+                        if i == len(buttons) - 1:
+                            self.state = 'menu'
+                        else:
+                            surf = pygame.Surface((width // 2, height // 7))
+                            surf.fill((0, 0, 0))
+                            screen.blit(surf, (0, 0))
+                            buy_car(i + 2)
+                            money_amount_surf = money_amount_font.render(str(all_settings['player_money']), True, (255, 255, 255))
+                for i in range(len(use_buttons)):
+                    button = use_buttons[i]
+                    if button.collidepoint(mouse_x, mouse_y):
+                        if i == len(buttons) - 1:
+                            self.state = 'menu'
+                        else:
+                            surf = pygame.Surface((width // 2, height // 7))
+                            surf.fill((0, 0, 0))
+                            screen.blit(surf, (0, 0))
+                            use_car(i + 2)
+
+            pygame.display.flip()
+            fpsClock.tick(fps)
+            
+            if self.state == 'menu':
+                self.menu()
+            
 
 if __name__ == '__main__':
     current_state = GameState()
