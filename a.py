@@ -21,3 +21,10 @@ kwargs = {'a': 5, 'b': 3}
 random_class = random.choice([SomeClass, AnotherClass])
 random_example = random_class(**kwargs)
 print(random_example.__dict__)
+
+
+
+
+
+
+

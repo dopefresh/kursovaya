@@ -129,6 +129,20 @@ class SpeedBooster(MovingDownObject):
     pass
 
 
+class BoosterFabrique: 
+    
+    @staticmethod
+    def get_booster(string):
+        kwargs = {'x': random.randint(width // 10, width - width // 3 - width // 9 - 30), 'y': -100}
+        
+        if string == 'TimeBooster':
+            kwargs['image_path'] = 'clock.png' 
+            return TimeBooster(**kwargs)
+        elif string == 'SpeedBooster':
+            kwargs['image_path'] = 'speed.png'
+            return SpeedBooster(**kwargs)
+
+
 class GameState:
     def __init__(self):
         self.state = 'menu'
@@ -234,17 +248,12 @@ class GameState:
                                          )
             if current_time - (random.randint(20, 30) * time_lapse) >= prev_booster_time:
                 random_booster_class = random.choice(['SpeedBooster', 'TimeBooster'])
-                kwargs = {'x': random.randint(width // 10, width - width // 3 - width // 9 - 30), 'y': -100}
+                random_booster = BoosterFabrique.get_booster(random_booster_class)
                 if random_booster_class == 'SpeedBooster':
-                    kwargs['image_path'] = 'speed.png'
-                    speed_booster = SpeedBooster(**kwargs)
-                    speed_boosters.add(speed_booster)
+                    speed_boosters.add(random_booster)
                 elif random_booster_class == 'TimeBooster':
-                    kwargs['image_path'] = 'clock.png'
-                    time_booster = TimeBooster(**kwargs)
-                    time_boosters.add(time_booster)
+                    time_boosters.add(random_booster)
 
-                # time_boosters.add(slow_down_booster)
                 prev_booster_time = time.time()
 
             players.draw(screen)
