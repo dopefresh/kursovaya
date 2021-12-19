@@ -2,6 +2,8 @@ from abc import ABC, abstractmethod
 
 from project.pygame_globals import width, height
 
+from typing import final
+
 
 class MoveBehavior(ABC):
     @abstractmethod
@@ -9,6 +11,7 @@ class MoveBehavior(ABC):
         pass
 
 
+@final
 class MoveYBehavior(MoveBehavior):
     def move(self, obj):
         obj.rect.y += obj.speed_y
@@ -18,16 +21,17 @@ class MoveYBehavior(MoveBehavior):
             obj.rect.y = height - obj.rect.height
 
 
+@final
 class MoveXBehavior(MoveBehavior):
     def move(self, obj):
         obj.rect.x += obj.speed_x
-
         if obj.rect.x < width // 10:
             obj.rect.x = width // 10
         if obj.rect.x > width - width // 3 - obj.rect.width - width // 9:
             obj.rect.x = width - obj.rect.width - width // 3 - width // 9
 
 
+@final
 class MoveYEnemyBehavior(MoveBehavior):
     def move(self, obj, speed_y):
         obj.speed_y = speed_y
