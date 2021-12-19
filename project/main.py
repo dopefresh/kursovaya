@@ -1,65 +1,41 @@
-import pygame
-from pygame.locals import *
-
-import sys
-import time
 import random
-import json
-import os
-
+from project.pygame_globals import *
 
 # Globals and initialization
-CARS = ['car1.png', 'car2.png', 'car3.png', 'car4.png',
-        'car5.png', 'car6.png', 'car7.png', 'car8.png']
-
-settings = open("settings.txt", "r", encoding="utf-8")
-all_settings = json.loads(settings.read())
-settings.close()
-
-SCORES = []
-pygame.init()
-begin_time = time.time()
-fps = all_settings['fps']
-fpsClock = pygame.time.Clock()
-
-width, height = all_settings["width"], all_settings["height"]
-screen = pygame.display.set_mode((width, height))
-pygame.display.set_caption("Drag Racing")
-pygame.display.set_icon(pygame.image.load("media/icon.png"))
-
-# Game images
-game_over_image = pygame.image.load('media/game_over.png')
-game_over_image = pygame.transform.scale(game_over_image, (width, height))
-
-# Music
-pygame.mixer.init()
-pygame.mixer.music.load("music/music.wav")
-pygame.mixer.music.play(-1)
-music_stopped = False
+from project.cars import Player, Enemy, TimeBooster, SpeedBooster
+from project.widgets import Widget
 
 
 def get_car_image(car_image):
-    return pygame.image.load(os.path.join('media', car_image))
+    return pygame.image.load(os.path.join(MEDIA_DIR, car_image))
 
 
 def quit_game():
-    global SCORES
-    output = open("data.txt", "w", encoding="utf-8")
-    for score in SCORES:
-        output.write(f"{score}\n")
+    with open(os.path.join(BASE_DIR, "data.txt"), "w", encoding="utf-8") as output:
+        for score in SCORES:
+            output.write(f"{score}\n")
 
-    settings_write = open("settings.txt", "w", encoding="utf-8")
-    settings_write.write(json.dumps(all_settings, indent=4))
-    settings_write.close()
+    with open(
+            os.path.join(
+                BASE_DIR,
+                "settings.txt"
+            ), "w", encoding="utf-8"
+    ) as settings_write:
+        settings_write.write(json.dumps(all_settings, indent=4))
     exit()
 
 
 def buy_car(number):
-    global screen
     if all_settings['player_money'] < (number + 1) * 100:
-        notification = pygame.font.Font('FiraCodeBold.ttf', 18)
+        notification = pygame.font.Font(
+            os.path.join(FONT_DIR, 'FiraCodeBold.ttf'),
+            18
+        )
         notification_surface = notification.render(
-            f'Not enough money', True, (255, 255, 255))
+            'Not enough money',
+            True,
+            (255, 255, 255)
+        )
         screen.blit(notification_surface, (0, 0))
         return
     if number in all_settings['cars_bought']:
@@ -68,133 +44,50 @@ def buy_car(number):
     all_settings['player_car'] = f'car{number}.png'
     all_settings['player_speed'] = 15 + 2 * (number - 1)
     all_settings['cars_bought'].append(number)
-    bought_notification = pygame.font.Font('FiraCodeBold.ttf', 18)
+    bought_notification = pygame.font.Font(
+        os.path.join(FONT_DIR, 'FiraCodeBold.ttf'),
+        18
+    )
     bought_notification_surface = bought_notification.render(
-        f'Bought car {number}', True, (255, 255, 255))
+        f'Bought car {number}',
+        True, (255, 255, 255)
+    )
     screen.blit(bought_notification_surface, (0, 0))
 
 
 def use_car(number):
-    global screen
-    if not number in all_settings['cars_bought']:
-        car_not_bought_notification = pygame.font.Font('FiraCodeBold.ttf', 18)
+    if number not in all_settings['cars_bought']:
+        car_not_bought_notification = pygame.font.Font(
+            os.path.join(FONT_DIR, 'FiraCodeBold.ttf'),
+            18
+        )
         car_not_bought_notification_surface = car_not_bought_notification.render(
-            f'You did not buy car {number}', True, (255, 255, 255))
+            f'You did not buy car {number}',
+            True,
+            (255, 255, 255)
+        )
         screen.blit(car_not_bought_notification_surface, (0, 0))
         return
     all_settings['player_car'] = f'car{number}.png'
     all_settings['player_speed'] = 15 + 2 * (number - 1)
 
 
-background_image = pygame.image.load('media/road2.png')
-background_image = pygame.transform.scale(
-    background_image, (width - width // 3, height * 2))
-mountains = pygame.image.load('media/mountains.png')
-mountains = pygame.transform.rotate(mountains, 270)
-mountains = pygame.transform.scale(mountains, (width // 3, height * 2))
+def enemy_factory():
+    image_path = CARS[random.randint(0, 7)]
+    return Enemy(image_path, random.randint(
+        width // 10, width - width // 3 - width // 9 - 30), -100)
 
 
-class Widget(pygame.Rect):
-    def __init__(self, left, top, text):
-        global width, height, screen
-        super().__init__((left, top), (width // 15, height // 15))
-        self.font = pygame.font.Font('FiraCodeBold.ttf', 18)
-        self.screen = screen
-        self.font_surface = self.font.render(text, True,
-                                             (255, 255, 255))
+def booster_factory(string):
+    kwargs = {'x': random.randint(
+        width // 10, width - width // 3 - width // 9 - 30), 'y': -100}
 
-
-class Car(pygame.sprite.Sprite):
-    def __init__(self, image_path):
-        super().__init__()
-        self.image = pygame.image.load(os.path.join('media', image_path))
-        self.image = pygame.transform.scale(
-            self.image, (width // 20, height // 8))
-        self.rect = self.image.get_rect()
-        self.speed_y = 0
-
-    def update(self):
-        self.rect.y += self.speed_y
-
-
-class Player(Car):
-    def __init__(self, image_path):
-        super().__init__(image_path)
-        # self.image = pygame.transform.rotate(self.image, 180)
-        self.rect.x = width // 2
-        self.rect.y = height - self.rect.height
-        self.speed_x = 0
-
-    def update(self):
-        self.rect.x += self.speed_x
-        self.rect.y += self.speed_y
-
-        if self.rect.x < width // 10:
-            self.rect.x = width // 10
-        if self.rect.x > width - width // 3 - self.rect.width - width // 9:
-            self.rect.x = width - self.rect.width - width // 3 - width // 9
-        # if self.rect.x > width:
-        #     self.rect.x = width
-        if self.rect.y < self.rect.height // 5:
-            self.rect.y = self.rect.height // 5
-        if self.rect.y > height - self.rect.height:
-            self.rect.y = height - self.rect.height
-
-    def ride(self, speed_x, speed_y):
-        self.speed_x = speed_x
-        self.speed_y = speed_y
-
-    def stop(self):
-        self.speed_x = 0
-        self.speed_y = 0
-
-
-class MovingDownObject(Car):
-    def __init__(self, image_path, x, y):
-        super().__init__(image_path)
-        self.image = pygame.transform.rotate(self.image, 180)
-        self.rect.x = x
-        self.rect.y = y
-
-    def update(self, speed_y):
-        self.speed_y = speed_y
-        self.rect.y += self.speed_y
-        if self.rect.y > height:
-            self.kill()
-
-
-class Enemy(MovingDownObject):
-    pass
-
-
-class TimeBooster(MovingDownObject):
-    pass
-
-
-class SpeedBooster(MovingDownObject):
-    pass
-
-
-class EnemyFactory:
-    @ staticmethod
-    def get_enemy():
-        image_path = CARS[random.randint(0, 7)]
-        return Enemy(image_path, random.randint(
-            width // 10, width - width // 3 - width // 9 - 30), -100)
-
-
-class BoosterFactory:
-    @ staticmethod
-    def get_booster(string):
-        kwargs = {'x': random.randint(
-            width // 10, width - width // 3 - width // 9 - 30), 'y': -100}
-
-        if string == 'TimeBooster':
-            kwargs['image_path'] = 'clock.png'
-            return TimeBooster(**kwargs)
-        elif string == 'SpeedBooster':
-            kwargs['image_path'] = 'speed.png'
-            return SpeedBooster(**kwargs)
+    if string == 'TimeBooster':
+        kwargs['image_path'] = 'clock.png'
+        return TimeBooster(**kwargs)
+    elif string == 'SpeedBooster':
+        kwargs['image_path'] = 'speed.png'
+        return SpeedBooster(**kwargs)
 
 
 class GameState:
@@ -202,7 +95,6 @@ class GameState:
         self.state = 'menu'
 
     def main_game(self):
-        global screen, width, height
         prev_time = time.time()
         normal_prev_time = time.time()
         prev_booster_time = time.time()
@@ -229,8 +121,12 @@ class GameState:
 
         score_number = 0
         speed_number = 120
-        score = pygame.font.Font('FiraCodeBold.ttf', 25)
-        current_car_speed = pygame.font.Font("FiraCodeBold.ttf", 25)
+        score = pygame.font.Font(
+            os.path.join(FONT_DIR, 'FiraCodeBold.ttf'),
+            25)
+        current_car_speed = pygame.font.Font(
+            os.path.join(FONT_DIR, "FiraCodeBold.ttf"),
+            25)
         score_surf = score.render(str(score_number), True, (255, 255, 255))
         current_car_speed_surf = current_car_speed.render(
             f"{speed_number} km/h", True, (255, 255, 255))
@@ -286,7 +182,7 @@ class GameState:
 
             if current_time - prev_time >= time_lapse:
                 prev_time = current_time
-                enemy = EnemyFactory.get_enemy()
+                enemy = enemy_factory()
 
                 enemies.add(enemy)
                 speed_number = round(speed_number + 0.1, 2)
@@ -300,7 +196,7 @@ class GameState:
             if current_time - (random.randint(20, 30) * time_lapse) >= prev_booster_time:
                 random_booster_class = random.choice(
                     ['SpeedBooster', 'TimeBooster'])
-                random_booster = BoosterFactory.get_booster(
+                random_booster = booster_factory(
                     random_booster_class)
                 if random_booster_class == 'SpeedBooster':
                     speed_boosters.add(random_booster)
@@ -358,7 +254,6 @@ class GameState:
                 self.game_over()
 
     def game_over(self):
-        global screen, game_over_image
         screen.fill((0, 0, 0))
         screen.blit(game_over_image, (0, 0))
         while True:
@@ -376,7 +271,6 @@ class GameState:
                 self.menu()
 
     def menu(self):
-        global screen, music_stopped
         # Widgets(left, top, text)
         play_button = Widget(width // 10, height // 3, 'play')
         quit_button = Widget(width // 10, height // 2.4, 'quit')
@@ -424,7 +318,6 @@ class GameState:
                 self.garage()
 
     def garage(self):
-        global screen, music_stopped
         # Widgets(left, top, text)
         buttons = [
             Widget(width // 15, height // 3, 'buy'),
@@ -462,11 +355,13 @@ class GameState:
 
         screen.fill((0, 0, 0))
 
-        money_amount_font = pygame.font.Font('FiraCodeBold.ttf', 18)
+        money_amount_font = pygame.font.Font(
+            os.path.join(FONT_DIR, 'FiraCodeBold.ttf'),
+            18)
         money_amount_surf = money_amount_font.render(
             str(all_settings['player_money']), True, (255, 255, 255))
 
-        money_icon = pygame.image.load(os.path.join('media', 'dollar.png'))
+        money_icon = pygame.image.load(os.path.join(MEDIA_DIR, 'dollar.png'))
         money_icon = pygame.transform.scale(
             money_icon, (width // 50, height // 40))
         screen.blit(money_icon, (width * 0.75, height * 0.75))
@@ -519,6 +414,10 @@ class GameState:
                 self.menu()
 
 
-if __name__ == '__main__':
+def main():
     current_state = GameState()
     current_state.menu()
+
+
+if __name__ == '__main__':
+    main()
