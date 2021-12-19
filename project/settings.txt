@@ -13,7 +13,7 @@
         600,
         700
     ],
-    "player_money": 335,
+    "player_money": 592,
     "cars_bought": [
         0,
         4

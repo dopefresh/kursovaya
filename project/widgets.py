@@ -1,10 +1,12 @@
-import os
-
 import pygame
 
 from project.main import FONT_DIR, width, height, screen
 
+from typing import final
+import os
 
+
+@final
 class Widget(pygame.Rect):
     def __init__(self, left, top, text):
         super().__init__((left, top), (width // 15, height // 15))

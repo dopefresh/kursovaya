@@ -5,17 +5,18 @@ from project.move_behaviors import MoveBehavior, MoveXBehavior, MoveYBehavior, M
 
 import os
 from abc import ABC, abstractmethod
+from typing import final
 
 
 def build(obj, image_path):
-    obj.image = pygame.image.load(
+    obj.image: pygame.Surface = pygame.image.load(
         os.path.join(MEDIA_DIR, image_path)
     )
     obj.image = pygame.transform.scale(
         obj.image, (width // 20, height // 8)
     )
-    obj.rect = obj.image.get_rect()
-    obj.speed_y = 0
+    obj.rect: pygame.Rect = obj.image.get_rect()
+    obj.speed_y: int = 0
 
 
 class Car(ABC):
@@ -24,14 +25,15 @@ class Car(ABC):
         pass
 
 
+@final
 class Player(Car, pygame.sprite.Sprite):
     def __init__(self, image_path):
         pygame.sprite.Sprite.__init__(self)
         build(self, image_path)
-        self.rect.x = width // 2
-        self.rect.y = height - self.rect.height
-        self.speed_x = 0
-        self.speed_y = 0
+        self.rect.x: int = width // 2
+        self.rect.y: int = height - self.rect.height
+        self.speed_x: int = 0
+        self.speed_y: int = 0
         self.move_x: MoveBehavior = MoveXBehavior()
         self.move_y: MoveBehavior = MoveYBehavior()
 
@@ -55,15 +57,17 @@ class Player(Car, pygame.sprite.Sprite):
 
 
 class MovingDownObject(Car, pygame.sprite.Sprite):
-    def __init__(self, image_path, x, y):
+    def __init__(self, image_path: str, x: int, y: int):
         pygame.sprite.Sprite.__init__(self)
         build(self, image_path)
         self.image = pygame.transform.rotate(self.image, 180)
-        self.speed_y = 0
+        self.speed_x: int = 0
+        self.speed_y: int = 0
         self.rect.x = x
         self.rect.y = y
         self.move_y: MoveBehavior = MoveYEnemyBehavior()
 
+    @final
     def update(self, speed_y):
         self.move_y.move(self, speed_y)
 

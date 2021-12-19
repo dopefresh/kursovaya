@@ -74,8 +74,14 @@ def use_car(number):
 
 def enemy_factory():
     image_path = CARS[random.randint(0, 7)]
-    return Enemy(image_path, random.randint(
-        width // 10, width - width // 3 - width // 9 - 30), -100)
+    return Enemy(
+        image_path,
+        random.randint(
+            width // 10,
+            width - width // 3 - width // 9 - 30
+        ),
+        -100
+    )
 
 
 def booster_factory(string):
@@ -101,7 +107,6 @@ class GameState:
         boost_time = None
         speed_boost_time = None
         time_boosted = False
-
         # Sprites
 
         # Player
@@ -396,8 +401,9 @@ class GameState:
                             surf.fill((0, 0, 0))
                             screen.blit(surf, (0, 0))
                             buy_car(i + 2)
-                            money_amount_surf = money_amount_font.render(
-                                str(all_settings['player_money']), True, (255, 255, 255))
+                            money_amount_font.render(
+                                str(all_settings['player_money']), True, (255, 255, 255)
+                            )
 
                 for i in range(len(use_buttons)):
                     button = use_buttons[i]

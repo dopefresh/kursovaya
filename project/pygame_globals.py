@@ -4,22 +4,23 @@ import time
 import json
 import os
 from pathlib import Path
+from typing import List
 
-CARS = ['car1.png', 'car2.png', 'car3.png', 'car4.png',
-        'car5.png', 'car6.png', 'car7.png', 'car8.png']
+CARS: List[str] = ['car1.png', 'car2.png', 'car3.png', 'car4.png',
+                   'car5.png', 'car6.png', 'car7.png', 'car8.png']
 
 BASE_DIR = Path(__file__).resolve().parent
 MEDIA_DIR = os.path.join(BASE_DIR, "media")
 MUSIC_DIR = os.path.join(BASE_DIR, "music")
 FONT_DIR = os.path.join(BASE_DIR, "fonts")
 with open(os.path.join(BASE_DIR, "settings.txt")) as settings:
-    all_settings = json.loads(settings.read())
+    all_settings: dict = json.loads(settings.read())
 
-SCORES = []
+SCORES: List[int] = []
 pygame.init()
-begin_time = time.time()
-fps = all_settings['fps']
-fpsClock = pygame.time.Clock()
+begin_time: float = time.time()
+fps: int = all_settings['fps']
+fpsClock: pygame.time.Clock = pygame.time.Clock()
 
 width, height = all_settings["width"], all_settings["height"]
 screen = pygame.display.set_mode((width, height))
