@@ -1,6 +1,6 @@
 import pygame
 
-from project.pygame_globals import MEDIA_DIR, width, height
+from project.pygame_globals import PygameGlobals
 from project.move_behaviors import MoveBehavior, MoveXBehavior, MoveYBehavior, MoveYEnemyBehavior
 
 import os
@@ -10,10 +10,10 @@ from typing import final
 
 def build(obj, image_path):
     obj.image: pygame.Surface = pygame.image.load(
-        os.path.join(MEDIA_DIR, image_path)
+        os.path.join(PygameGlobals.MEDIA_DIR, image_path)
     )
     obj.image = pygame.transform.scale(
-        obj.image, (width // 20, height // 8)
+        obj.image, (PygameGlobals.width // 20, PygameGlobals.height // 8)
     )
     obj.rect: pygame.Rect = obj.image.get_rect()
     obj.speed_y: int = 0
@@ -30,8 +30,8 @@ class Player(Car, pygame.sprite.Sprite):
     def __init__(self, image_path):
         pygame.sprite.Sprite.__init__(self)
         build(self, image_path)
-        self.rect.x: int = width // 2
-        self.rect.y: int = height - self.rect.height
+        self.rect.x: int = PygameGlobals.width // 2
+        self.rect.y: int = PygameGlobals.height - self.rect.height
         self.speed_x: int = 0
         self.speed_y: int = 0
         self.move_x: MoveBehavior = MoveXBehavior()

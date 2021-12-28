@@ -8,7 +8,7 @@
       <excludeFolder url="file://$MODULE_DIR$/project/media" />
       <excludeFolder url="file://$MODULE_DIR$/project/fonts" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="Python 3.10 (kursovaya)" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
 </module>

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 
-from project.pygame_globals import width, height
+from project.pygame_globals import PygameGlobals
 
 from typing import final
 
@@ -17,18 +17,18 @@ class MoveYBehavior(MoveBehavior):
         obj.rect.y += obj.speed_y
         if obj.rect.y < obj.rect.height // 5:
             obj.rect.y = obj.rect.height // 5
-        if obj.rect.y > height - obj.rect.height:
-            obj.rect.y = height - obj.rect.height
+        if obj.rect.y > PygameGlobals.height - obj.rect.height:
+            obj.rect.y = PygameGlobals.height - obj.rect.height
 
 
 @final
 class MoveXBehavior(MoveBehavior):
     def move(self, obj):
         obj.rect.x += obj.speed_x
-        if obj.rect.x < width // 10:
-            obj.rect.x = width // 10
-        if obj.rect.x > width - width // 3 - obj.rect.width - width // 9:
-            obj.rect.x = width - obj.rect.width - width // 3 - width // 9
+        if obj.rect.x < PygameGlobals.width // 10:
+            obj.rect.x = PygameGlobals.width // 10
+        if obj.rect.x > PygameGlobals.width - PygameGlobals.width // 3 - obj.rect.width - PygameGlobals.width // 9:
+            obj.rect.x = PygameGlobals.width - obj.rect.width - PygameGlobals.width // 3 - PygameGlobals.width // 9
 
 
 @final
@@ -36,5 +36,5 @@ class MoveYEnemyBehavior(MoveBehavior):
     def move(self, obj, speed_y):
         obj.speed_y = speed_y
         obj.rect.y += obj.speed_y
-        if obj.rect.y > height:
+        if obj.rect.y > PygameGlobals.height:
             obj.kill()

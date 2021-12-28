@@ -2,8 +2,8 @@
     "width": 1280,
     "height": 650,
     "fps": 60,
-    "player_car": "car4.png",
-    "player_speed": 21,
+    "player_car": "car5.png",
+    "player_speed": 23,
     "car_prices": [
         100,
         200,
@@ -13,9 +13,10 @@
         600,
         700
     ],
-    "player_money": 748,
+    "player_money": 337,
     "cars_bought": [
         0,
-        4
+        4,
+        5
     ]
 }
